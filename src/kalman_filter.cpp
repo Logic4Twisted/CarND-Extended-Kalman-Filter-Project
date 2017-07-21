@@ -61,11 +61,11 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
 
   VectorXd h_x = getPolar();
 
-  std::cout << "h_x = " << h_x << std::endl;
+  //std::cout << "h_x = " << h_x << std::endl;
   VectorXd y = z - h_x;
   y[1] -= (2 * M_PI) * floor((y[1] + M_PI) / (2 * M_PI));
 
-  std::cout << "Hj = " << H_ << std::endl;
+  //std::cout << "Hj = " << H_ << std::endl;
   MatrixXd Hj_t = H_.transpose();
   MatrixXd S = H_*P_*Hj_t + R_;
   MatrixXd S_i = S.inverse();

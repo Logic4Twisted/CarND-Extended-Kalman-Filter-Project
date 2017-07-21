@@ -107,18 +107,19 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    ****************************************************************************/
   ekf_.H_ = H_laser_;
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-    ekf_.R_ = R_radar_;
     float r = measurement_pack.raw_measurements_[0];
     float phi = measurement_pack.raw_measurements_[1];
     float v = measurement_pack.raw_measurements_[2];
     VectorXd x_predicted(4);
     x_predicted << r*cos(phi), r*sin(phi), v*cos(phi), v*sin(phi);
     Hj_ =  tools.CalculateJacobian(x_predicted);
+
     ekf_.H_ = Hj_;
+    ekf_.R_ = R_radar_;
     ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   } else {
-    ekf_.R_ = R_laser_;
     ekf_.H_ = H_laser_;
+    ekf_.R_ = R_laser_;
     ekf_.Update(measurement_pack.raw_measurements_);
   }
 
