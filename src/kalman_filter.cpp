@@ -26,50 +26,53 @@ void KalmanFilter::Predict() {
 
 void KalmanFilter::Update(const VectorXd &z) {
   VectorXd y = z - H_*x_;
-  MatrixXd S = H_*P_*H_.transpose() + R_;
-  MatrixXd K = P_*H_.transpose()*S.inverse();
+  MatrixXd H_t = H_.transpose();
+  MatrixXd S = H_*P_*H_t + R_;
+  MatrixXd S_i = S.inverse();
+  MatrixXd K = P_*H_t*S_i;
   x_ = x_ + K*y;
-  MatrixXd I = MatrixXd::Identity(x_.size(), x_.size());
+  int size = x_.size();
+  MatrixXd I = MatrixXd::Identity(size, size);
   P_ = (I - K*H_)*P_;
 }
 
-void KalmanFilter::UpdateEKF(const VectorXd &z) {
-  const double pi = 3.1415926535897;
-  float r = z(0);
-  float phi = z(1);
-  float v = z(2);
+VectorXd KalmanFilter::getPolar() {
   float px = x_[0];
   float py = x_[1];
   float vx = x_[2];
   float vy = x_[3];
-  std::cout << ">" << px << "," << py << "<" << std::endl;
+
   VectorXd h_x = VectorXd(3);
-  if (px*px + py*py < 1.0e-5) {
-    return;
+  float eps = 1.0e-5;
+  if (fabs(px) < eps & fabs(px) < eps) {
+    px = eps;
+    py = eps;
+  } else if (fabs(px) < 1.0e-5) {
+    px = eps;
   }
-  else if (fabs(px) < 1.0e-5) {
-    if (py > 0) {
-      h_x << py, pi/2, vy;
-    }
-    else {
-      h_x << py, -pi/2, vy;
-    }
-  }
-  else {
-    float fi = atan2(py, px); // ? +-pi
-    float s = sqrt(px*px + py*py);
-    h_x << s, fi, (px*vx+py*vy)/s;
-  }
+
+  float fi = atan2f(py, px);
+  float s = sqrtf(powf(px, 2) + powf(py, 2));
+  h_x << s, fi, (px * vx + py * vy) / s;
+  return h_x;
+}
+
+void KalmanFilter::UpdateEKF(const VectorXd &z) {
+
+  VectorXd h_x = getPolar();
+
   std::cout << "h_x = " << h_x << std::endl;
   VectorXd y = z - h_x;
-  Tools tools = Tools();
-  VectorXd x_predicted(4);
-  x_predicted << r*cos(phi), r*sin(phi), v*cos(phi), r*sin(phi);
-  MatrixXd Hj = tools.CalculateJacobian(x_predicted);
-  std::cout << "Hj = " << Hj << std::endl;
-  MatrixXd S = Hj*P_*Hj.transpose() + R_;
-  MatrixXd K = P_*Hj.transpose()*S.inverse();
+  y[1] -= (2 * M_PI) * floor((y[1] + M_PI) / (2 * M_PI));
+
+  std::cout << "Hj = " << H_ << std::endl;
+  MatrixXd Hj_t = H_.transpose();
+  MatrixXd S = H_*P_*Hj_t + R_;
+  MatrixXd S_i = S.inverse();
+  MatrixXd K = P_*Hj_t*S_i;
   x_ = x_ + K*y;
-  MatrixXd I = MatrixXd::Identity(x_.size(), x_.size());
-  P_ = (I - K*Hj)*P_;
+
+  int size = x_.size();
+  MatrixXd I = MatrixXd::Identity(size, size);
+  P_ = (I - K*H_)*P_;
 }

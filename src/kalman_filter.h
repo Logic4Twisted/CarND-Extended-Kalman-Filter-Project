@@ -65,6 +65,11 @@ public:
    */
   void UpdateEKF(const Eigen::VectorXd &z);
 
+  /**
+   * Get polar coordinates from Cartesian
+   *
+   */
+  Eigen::VectorXd getPolar();
 };
 
 #endif /* KALMAN_FILTER_H_ */
